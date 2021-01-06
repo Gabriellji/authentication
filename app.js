@@ -2,29 +2,30 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const passport = require('passport');
-const LocalStrategy = require('passport-local');
-const passportJWT = require('passport-jwt');
+const passport = require("passport")
+const LocalStrategy = require("passport-local")
+const passportJWT = require("passport-jwt")
 
 JWTStrategy = passportJWT.Strategy
 
 const apiRouter = require('./routes/api');
+const { userInfo } = require('os');
 
 const app = express();
 app.use(passport.initialize())
 
 const user = {
-  id: '1',
-  email: 'example@email.com',
-  password: 'password'
+  id: "1",
+  email: "example@email.com",
+  password: "password"
 }
 
 passport.use(new LocalStrategy({
-  usernameField: 'email'
+  usernameField: "email"
 }, (email, password, done) => {
-  if (email === user.email && password === user.password) {
+  if(email === user.email && password === user.password) {
     return done(null, user)
-  } else {
+  }else {
     return done(null, false)
   }
 }))
@@ -33,7 +34,7 @@ passport.use(new JWTStrategy({
   jwtFromRequest: passportJWT.ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: "jwt_secret"
 }, (jwt_payload, done) => {
-  if (user.id === jwt_payload._id) {
+  if(user.id === jwt_payload.user._id){
     return done(null, user)
   } else {
     return done(null, false, {
@@ -48,7 +49,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(express.static(path.join(__dirname, "client/build")))
+
 app.use('/api', apiRouter);
+
+app.get("*", (req, res) => {
+  return res.sendFile(path.join(__dirname, "/client/build/index.html"))
+})
 
 // error handler
 app.use(function(err, req, res, next) {
